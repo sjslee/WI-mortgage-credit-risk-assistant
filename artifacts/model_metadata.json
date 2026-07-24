@@ -1,0 +1,32 @@
+{
+  "model_name": "Wisconsin Mortgage 12-Month PD Model",
+  "model_version": "1.0",
+  "model_type": "WOE Logistic Regression",
+  "target": "default_12m",
+  "prediction_horizon_months": 12,
+  "population": "Freddie Mac Wisconsin mortgage originations",
+  "origination_years": "2020-2022",
+  "raw_features": [
+    "credit_score",
+    "original_combined_loan_to_value",
+    "original_debt_to_income_ratio",
+    "original_interest_rate",
+    "number_of_borrowers"
+  ],
+  "model_features": [
+    "credit_score_woe",
+    "original_combined_loan_to_value_woe",
+    "original_debt_to_income_ratio_woe",
+    "original_interest_rate_woe",
+    "number_of_borrowers_woe"
+  ],
+  "performance": {
+    "train_auc": 0.8175,
+    "validation_auc": 0.8239,
+    "oot_auc": 0.8083,
+    "oot_ks": 0.5143,
+    "oot_brier_before_calibration": 0.0049667,
+    "oot_brier_after_calibration": 0.0049212,
+    "top_decile_lift": 4.415
+  }
+}
