@@ -495,15 +495,17 @@ Structured model output:
                 return self._call_openrouter(prompt)
 
         except Exception as error:
-            print(
-                "AI question answering unavailable: "
-                f"{error}"
+            return (
+                "OpenRouter request failed. "
+                f"Details: {type(error).__name__}: {error}"
             )
 
         return self.build_fallback_question_answer(
             question=question,
             result=result,
         )
+
+
 
     def build_question_prompt(
         self,
