@@ -24,24 +24,24 @@ def assign_risk_tier(calibrated_pd: float) -> tuple[str, str]:
     if calibrated_pd < 0.0025:
         return (
             "Low",
-            "The estimated probability of default is relatively low.",
+            "The estimated probability of default is below the typical level observed in the model portfolio.",
         )
 
     if calibrated_pd < 0.0075:
         return (
             "Moderate",
-            "The estimated probability of default is moderate.",
+            "The estimated probability of default is near the typical range observed in the model portfolio.",
         )
 
     if calibrated_pd < 0.015:
         return (
             "Elevated",
-            "The estimated probability of default is elevated.",
+            "The estimated probability of default is above the typical range observed in the model portfolio.",
         )
 
     return (
         "High",
-        "The estimated probability of default is high relative to the model scale.",
+        "The estimated probability of default is among the higher-risk outcomes on this model's scale.",
     )
 
 
