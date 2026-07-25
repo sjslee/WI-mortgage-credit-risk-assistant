@@ -19,8 +19,9 @@ FIELD_RULES = {
             (
                 r"(?:credit\s*score|fico)"
                 r"(?:\s*(?:is|was|to|of|=|becomes|became|"
-                r"increased\s+to|decreased\s+to|drops?\s+to|"
-                r"rises?\s+to|were|was set to))?"
+                r"increase(?:s|d)?\s+to|decrease(?:s|d)?\s+to|"
+                r"drop(?:s|ped)?\s+to|rise(?:s|n)?\s+to|"
+                r"were|was set to))?"
                 r"\s*(\d{3})"
             ),
         ],
@@ -35,8 +36,9 @@ FIELD_RULES = {
                 r"(?:combined\s+loan[-\s]?to[-\s]?value"
                 r"(?:\s+ratio)?|cltv)"
                 r"(?:\s*(?:is|was|to|of|=|becomes|became|"
-                r"increased\s+to|decreased\s+to|drops?\s+to|"
-                r"rises?\s+to|were|was set to))?"
+                r"increase(?:s|d)?\s+to|decrease(?:s|d)?\s+to|"
+                r"drop(?:s|ped)?\s+to|rise(?:s|n)?\s+to|"
+                r"were|was set to))?"
                 r"\s*(\d+(?:\.\d+)?)\s*%?"
             ),
         ],
@@ -51,8 +53,9 @@ FIELD_RULES = {
                 r"(?:debt[-\s]?to[-\s]?income"
                 r"(?:\s+ratio)?|dti)"
                 r"(?:\s*(?:is|was|to|of|=|becomes|became|"
-                r"increased\s+to|decreased\s+to|drops?\s+to|"
-                r"rises?\s+to|were|was set to))?"
+                r"increase(?:s|d)?\s+to|decrease(?:s|d)?\s+to|"
+                r"drop(?:s|ped)?\s+to|rise(?:s|n)?\s+to|"
+                r"were|was set to))?"
                 r"\s*(\d+(?:\.\d+)?)\s*%?"
             ),
         ],
@@ -67,8 +70,9 @@ FIELD_RULES = {
                 r"(?:original\s+interest\s+rate|interest\s+rate|"
                 r"mortgage\s+rate|rate)"
                 r"(?:\s*(?:is|was|to|of|=|becomes|became|"
-                r"increased\s+to|decreased\s+to|drops?\s+to|"
-                r"rises?\s+to|were|was set to))?"
+                r"increase(?:s|d)?\s+to|decrease(?:s|d)?\s+to|"
+                r"drop(?:s|ped)?\s+to|rise(?:s|n)?\s+to|"
+                r"were|was set to))?"
                 r"\s*(\d+(?:\.\d+)?)\s*%?"
             ),
         ],
@@ -82,8 +86,9 @@ FIELD_RULES = {
             (
                 r"(?:number\s+of\s+borrowers|borrowers?)"
                 r"(?:\s*(?:is|was|to|of|=|becomes|became|"
-                r"increased\s+to|decreased\s+to|drops?\s+to|"
-                r"rises?\s+to|were|was set to))?"
+                r"increase(?:s|d)?\s+to|decrease(?:s|d)?\s+to|"
+                r"drop(?:s|ped)?\s+to|rise(?:s|n)?\s+to|"
+                r"were|was set to))?"
                 r"\s*(\d+)"
             ),
             r"(\d+)\s+borrowers?",
