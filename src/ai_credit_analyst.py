@@ -245,14 +245,8 @@ Structured model output:
 
         return {
             "borrower_inputs": borrower_inputs,
-            "calibrated_12_month_pd_percent": round(
-                float(
-                    result.get(
-                        "calibrated_pd_percent",
-                        0.0,
-                    )
-                ),
-                4,
+            "calibrated_12_month_pd_display": (
+                f"{float(result.get('calibrated_pd_percent', 0.0)):.4f}%"
             ),
             "risk_tier": result.get(
                 "risk_tier",
@@ -293,6 +287,7 @@ Structured model output:
             ordered_drivers,
             start=1,
         ):
+
             normalized_drivers.append(
                 {
                     "rank": rank,
@@ -300,14 +295,10 @@ Structured model output:
                         "label",
                         "Unknown factor",
                     ),
-                    "log_odds_contribution": round(
-                        float(
-                            driver.get(
-                                "contribution",
-                                0.0,
-                            )
-                        ),
-                        4,
+                    "effect": (
+                        "increased estimated risk"
+                        if reverse
+                         else "reduced estimated risk"
                     ),
                 }
             )
@@ -452,6 +443,260 @@ Structured model output:
 
         return explanation
 
+
+    def answer_model_question(
+        self,
+        question: str,
+        result: dict[str, Any],
+    ) -> str:
+        """
+        Answer a natural-language question about the current
+        borrower and verified model result.
+
+        Deterministic calculations remain outside the LLM. The
+        LLM only explains facts supplied in the model context.
+        """
+        prompt = self.build_question_prompt(
+            question=question,
+            result=result,
+        )
+
+        try:
+            if self.provider == "ollama":
+                return self._call_ollama(prompt)
+
+            if self.provider == "openrouter":
+                return self._call_openrouter(prompt)
+
+        except Exception as error:
+            print(
+                "AI question answering unavailable: "
+                f"{error}"
+            )
+
+        return self.build_fallback_question_answer(
+            question=question,
+            result=result,
+        )
+
+    def build_question_prompt(
+        self,
+        question: str,
+        result: dict[str, Any],
+    ) -> str:
+        """Build a grounded prompt for conversational Q&A."""
+        context = self._build_llm_context(result)
+
+        context_json = json.dumps(
+            context,
+            indent=2,
+            ensure_ascii=False,
+        )
+
+        return f"""
+You are an experienced mortgage credit-risk analyst assisting a
+business user reviewing a model result.
+
+Answer the user's question using only the structured model output
+provided below.
+
+USER QUESTION:
+
+{question}
+
+STRICT RULES:
+
+QUESTION TYPE
+
+1. First determine whether the user's question is:
+   • A model-specific question about this borrower or prediction.
+   • A general educational question about mortgage credit risk.
+
+2. For model-specific questions, use ONLY the supplied structured
+   model output.
+
+3. For educational questions, you may use general mortgage
+   credit-risk knowledge to explain concepts such as:
+   • Combined loan-to-value ratio (CLTV)
+   • Debt-to-income ratio (DTI)
+   • Probability of default (PD)
+   • Weight of Evidence (WOE)
+   • Logistic regression
+   • Calibration
+   • Credit risk modeling
+
+4. Clearly distinguish general educational information from the
+   conclusions of this specific model.
+
+MODEL FIDELITY
+
+5. The field "calibrated_12_month_pd_display" already contains the
+   final formatted percentage.
+
+   Copy it exactly as provided.
+
+   Do not modify it.
+   Do not multiply it by 100.
+   Do not remove or add decimal places.
+   Do not remove or add the percent sign.
+
+   Example:
+   0.9394% → 0.9394%
+
+6. Do not calculate, estimate, modify, reinterpret, or recompute the
+   probability of default.
+
+7. Do not describe log-odds contributions as probabilities,
+   percentages, or percentage-point changes.
+
+8. Use the supplied risk tier exactly as provided.
+
+9. When asked about the largest contributors, use the ranked driver
+   information supplied in the structured output.
+
+MODEL INTERPRETATION
+
+10. Treat all model effects as historical associations learned from
+    the modeling data, not as causal relationships.
+
+11. When discussing model drivers, describe them as factors identified
+    by the model.
+
+12. Do not invent economic, behavioral, underwriting, or financial
+    explanations for why a factor increased or reduced risk unless the
+    user is asking a general educational question.
+
+13. When explaining model results, preserve all numeric values,
+    rankings, and conclusions exactly.
+
+BORROWER FACTS
+
+14. Do not invent borrower-specific facts that are not present in the
+    structured model output.
+
+15. Do not invent or assume:
+    • Income
+    • Assets
+    • Employment
+    • Payment history
+    • Documentation
+    • Collateral condition
+    • Loan purpose
+    • Credit history beyond what is supplied
+
+16. Do not infer borrower characteristics from the input values.
+
+    For example, do not describe a borrower as:
+    • High risk because of employment.
+    • Financially strong or weak.
+    • Above or below average.
+    • Typical or atypical.
+    • Having more or less equity.
+    • More creditworthy.
+    • Better able to repay.
+
+    unless those statements are explicitly supported by the structured
+    model output.
+
+17. Do not classify borrower inputs as high, low, favorable,
+    unfavorable, strong, weak, typical, or atypical unless those
+    classifications are explicitly present in the structured output.
+
+STYLE
+
+18. Use plain, professional language.
+
+19. If the user requests a simple explanation, simplify the wording
+    while preserving all model conclusions exactly.
+
+20. Keep responses concise.
+
+21. If the requested information is not available in the structured
+    model output, clearly state that it is unavailable rather than
+    inventing an answer.
+
+LIMITATIONS
+
+22. Do not recommend approval, denial, pricing, loan terms,
+    eligibility, or lending decisions.
+
+23. Do not compare this borrower with an average borrower, portfolio,
+    industry benchmark, or historical population unless that
+    comparison is explicitly included in the structured model output.
+
+24. Before responding, verify that:
+    • The PD matches exactly.
+    • The risk tier matches exactly.
+    • No borrower facts were invented.
+    • No unsupported comparisons were introduced.
+    • No unsupported causal explanations were added
+
+Structured model output:
+
+{context_json}
+""".strip()
+
+    def build_fallback_question_answer(
+        self,
+        question: str,
+        result: dict[str, Any],
+    ) -> str:
+        """Provide a safe deterministic answer if the LLM fails."""
+        question_lower = question.lower()
+        pd_percent = float(
+            result.get("calibrated_pd_percent", 0.0)
+        )
+        risk_tier = result.get("risk_tier", "Unknown")
+
+        increasers = self._normalize_drivers(
+            result.get("top_risk_increasers", []),
+            reverse=True,
+        )
+        reducers = self._normalize_drivers(
+            result.get("top_risk_reducers", []),
+            reverse=False,
+        )
+
+        if "biggest" in question_lower or "contributor" in question_lower:
+            if not increasers:
+                return (
+                    "No material risk-increasing factors were "
+                    "identified for this borrower."
+                )
+
+            factors = ", ".join(
+                driver["factor"] for driver in increasers[:4]
+            )
+            return (
+                f"The largest model-based risk contributors, in ranked "
+                f"order, are {factors}. These factors increased the "
+                "model's estimated risk; their internal contribution "
+                "values are not direct changes in probability of default."
+            )
+
+        if "reduce" in question_lower or "positive" in question_lower:
+            if not reducers:
+                return (
+                    "The model did not identify a material "
+                    "risk-reducing factor for this borrower."
+                )
+
+            factors = ", ".join(
+                driver["factor"] for driver in reducers[:3]
+            )
+            return (
+                f"The model identified {factors} as reducing estimated "
+                "risk in this particular case, based on patterns learned "
+                "from the modeling data."
+            )
+
+        return (
+            f"The model estimates a calibrated 12-month probability of "
+            f"default of {pd_percent:.4f}%, placing the borrower in the "
+            f"{risk_tier} risk tier. The explanation is based on the "
+            "current verified model result and does not represent an "
+            "approval or denial decision."
+        )
 
     def generate_scenario_explanation(
         self,

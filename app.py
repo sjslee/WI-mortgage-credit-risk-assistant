@@ -1182,15 +1182,15 @@ else:
 
     st.markdown(
         '<div class="section-title">'
-        "Conversational Scenario Analysis"
+        "AI Credit Risk Assistant"
         "</div>",
         unsafe_allow_html=True,
     )
 
     st.caption(
-        "Ask an explicit what-if question, search for a PD or "
-        "risk-tier target, compare two changes, or ask which "
-        "single model input produces the largest tested PD reduction."
+        "Ask about the current model result, request a plain-language "
+        "explanation, test a what-if scenario, search for a PD or "
+        "risk-tier target, or compare borrower-input changes."
     )
 
     for message in st.session_state.scenario_messages:
@@ -1198,7 +1198,7 @@ else:
             st.markdown(message["content"])
 
     scenario_question = st.chat_input(
-        "Ask a scenario, target-search, comparison, or optimization question"
+        "Ask about this borrower, the model result, or a what-if scenario"
     )
 
     if scenario_question:
@@ -1388,16 +1388,30 @@ else:
                 }
             )
 
-        except ScenarioParseError as error:
+
+        except ScenarioParseError:
+            try:
+                assistant_message = (
+                    ai_analyst.answer_model_question(
+                        question=scenario_question,
+                        result=ai_result,
+                    )
+                )
+
+            except Exception as error:
+                assistant_message = (
+                    "I could not answer that question using the "
+                    f"current model result. Details: {error}"
+                )
+
             st.session_state.scenario_messages.append(
                 {
                     "role": "assistant",
-                    "content": (
-                        "I could not evaluate that request. "
-                        f"{error}"
-                    ),
+                    "content": assistant_message,
                 }
-            )
+             )
+
+    
 
         except Exception as error:
             st.session_state.scenario_messages.append(
