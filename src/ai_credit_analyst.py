@@ -59,7 +59,7 @@ class AICreditAnalyst:
                 model
                 or os.getenv(
                     "OPENROUTER_MODEL",
-                    "meta-llama/llama-3.2-3b-instruct:free",
+                    "openai/gpt-oss-20b:free",
                 )
             )
 
